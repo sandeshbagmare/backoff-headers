@@ -1,31 +1,23 @@
-# backoff-headers
+<p align="center">
+  <img src="https://raw.githubusercontent.com/sandeshbagmare/backoff-headers/main/assets/banner.svg" width="100%" alt="backoff-headers: turn a rate-limit header into the exact time to wait">
+</p>
 
-Turn `Retry-After` and rate-limit headers into a number of seconds to wait.
+<p align="center">
+  <a href="https://pypi.org/project/backoff-headers/"><img alt="PyPI version" src="https://img.shields.io/pypi/v/backoff-headers.svg"></a>
+  <a href="https://pypi.org/project/backoff-headers/"><img alt="Python versions" src="https://img.shields.io/pypi/pyversions/backoff-headers.svg"></a>
+  <a href="https://pypi.org/project/backoff-headers/"><img alt="Downloads" src="https://img.shields.io/pypi/dm/backoff-headers.svg"></a>
+  <a href="https://github.com/sandeshbagmare/backoff-headers/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/sandeshbagmare/backoff-headers/actions/workflows/ci.yml/badge.svg"></a>
+  <a href="https://github.com/sandeshbagmare/backoff-headers/blob/main/LICENSE"><img alt="License" src="https://img.shields.io/pypi/l/backoff-headers.svg"></a>
+  <a href="https://sandeshbagmare.github.io/backoff-headers/"><img alt="docs" src="https://img.shields.io/badge/docs-online-2ea44f.svg"></a>
+  <a href="https://pypi.org/project/backoff-headers/"><img alt="zero dependencies" src="https://img.shields.io/badge/dependencies-0-2ea44f.svg"></a>
+</p>
 
-[![PyPI](https://img.shields.io/pypi/v/backoff-headers.svg)](https://pypi.org/project/backoff-headers/)
-[![Python](https://img.shields.io/pypi/pyversions/backoff-headers.svg)](https://pypi.org/project/backoff-headers/)
-[![tests](https://github.com/sandeshbagmare/backoff-headers/actions/workflows/ci.yml/badge.svg)](https://github.com/sandeshbagmare/backoff-headers/actions/workflows/ci.yml)
-[![license](https://img.shields.io/pypi/l/backoff-headers.svg)](https://github.com/sandeshbagmare/backoff-headers/blob/main/LICENSE)
+<h3 align="center">turn a rate-limit header into the exact time to wait</h3>
+<p align="center"><em>Standard library only. No runtime dependencies. Python 3.9+.</em></p>
 
-```python
-from backoff_headers import wait_time
-
-response = client.get("/search")
-seconds = wait_time(response.headers)
-if seconds is not None:
-    time.sleep(seconds)
-```
-
-Two headers describe the same thing and disagree about units:
-
-| header | meaning | trap |
-| ------ | ------- | ---- |
-| `Retry-After` | seconds **or** an HTTP date | parsing the date as a number gives a wait of eleven days |
-| `RateLimit-Reset` (RFC 9331) | seconds **from now** | reading it as a timestamp waits until 1970 |
-| `X-RateLimit-Reset` (GitHub) | an absolute **Unix timestamp** | reading it as a delta waits for weeks |
-
-`wait_time` reads whichever is present, resolves the unit, and returns seconds — or
-`None` when there is no reason to wait at all.
+<p align="center">
+  <img src="https://raw.githubusercontent.com/sandeshbagmare/backoff-headers/main/assets/how.svg" width="720" alt="how backoff-headers fits in">
+</p>
 
 ## Install
 

@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>backoff-headers — turn a rate-limit header into the exact time to wait</title>
+<meta name="description" content="Turn a rate-limit header into the exact time to wait. Standard library only, Python 3.9+.">
+<meta property="og:title" content="backoff-headers — turn a rate-limit header into the exact time to wait">
+<meta property="og:description" content="Turn a rate-limit header into the exact time to wait. Standard library only, Python 3.9+.">
+<meta property="og:image" content="https://raw.githubusercontent.com/sandeshbagmare/backoff-headers/main/assets/banner.svg">
+<meta property="og:type" content="website">
+<link rel="icon" href="../assets/logo.svg" type="image/svg+xml">
+<style>
+  :root {
+    --bg: hsl(8 45% 8%);
+    --ink: #e6edf6;
+    --muted: #9fb0c6;
+    --line: hsl(8 35% 26%);
+    --accent: hsl(38 88% 66%);
+    --soft: hsl(38 92% 80%);
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font: 16px/1.65 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  a { color: var(--soft); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  header {
+    position: sticky; top: 0; z-index: 9; display: flex; gap: 18px; align-items: center;
+    padding: 14px 24px; background: rgba(8, 12, 20, 0.86); backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--line);
+  }
+  header .mark { width: 26px; height: 26px; }
+  header strong { font-family: ui-monospace, monospace; letter-spacing: 0.02em; }
+  header nav { margin-left: auto; display: flex; gap: 16px; font-size: 14px; }
+  .hero { max-width: 1180px; margin: 0 auto; padding: 18px 20px 0; }
+  .hero img { width: 100%; border-radius: 14px; box-shadow: 0 18px 50px rgba(0,0,0,0.45); }
+  main { max-width: 900px; margin: 0 auto; padding: 28px 20px 80px; }
+  h1, h2, h3, h4 { line-height: 1.25; }
+  h2 { margin-top: 44px; padding-top: 18px; border-top: 1px solid var(--line); }
+  code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.92em;
+    background: rgba(148, 163, 184, 0.15); padding: 1px 5px; border-radius: 5px;
+  }
+  pre.code {
+    position: relative; background: #070b12; border: 1px solid var(--line);
+    border-radius: 12px; padding: 16px; overflow-x: auto;
+  }
+  pre.code code { background: none; padding: 0; font-size: 14px; }
+  pre .lang {
+    position: absolute; top: 8px; right: 12px; font-size: 11px; letter-spacing: 0.08em;
+    text-transform: uppercase; color: var(--muted);
+  }
+  table { width: 100%; border-collapse: collapse; margin: 18px 0; font-size: 15px; }
+  th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--line); }
+  th { color: var(--muted); font-weight: 600; }
+  img { max-width: 100%; }
+  blockquote {
+    margin: 18px 0; padding: 4px 16px; border-left: 3px solid var(--accent);
+    color: var(--muted);
+  }
+  footer {
+    border-top: 1px solid var(--line); padding: 26px 20px; color: var(--muted);
+    font-size: 14px; text-align: center;
+  }
+</style>
+</head>
+<body>
+<header>
+  <img class="mark" src="../assets/logo.svg" alt="">
+  <strong>backoff-headers</strong>
+  <nav>
+    <a href="https://pypi.org/project/backoff-headers/">PyPI</a>
+    <a href="https://github.com/sandeshbagmare/backoff-headers">GitHub</a>
+    <a href="https://github.com/sandeshbagmare/backoff-headers/issues">Issues</a>
+    <a href="https://github.com/sandeshbagmare/backoff-headers/blob/main/CHANGELOG.md">Changelog</a>
+  </nav>
+</header>
+<div class="hero"><img src="../assets/banner.svg" alt="backoff-headers"></div>
+<main>
+<p align="center">
+  <img src="../assets/how.svg" width="720" alt="how backoff-headers fits in">
+</p>
+<h2>Install</h2>
+<pre class="code"><span class="lang">console</span><code>pip install backoff-headers</code></pre>
+<h2>API</h2>
+<pre class="code"><span class="lang">python</span><code>from backoff_headers import (
+    format_retry_after, parse_rate_limit, parse_retry_after, wait_time,
+)
+
+parse_retry_after(&quot;120&quot;)                            # 120.0
+parse_retry_after(&quot;Wed, 21 Oct 2015 07:28:00 GMT&quot;)  # seconds until then, 0.0 if past
+
+limit = parse_rate_limit(response.headers)
+limit.limit, limit.remaining, limit.window, limit.policy
+limit.exhausted                  # remaining == 0
+limit.seconds_until_reset()
+
+wait_time(headers, cap=60, jitter=2.0)   # never longer than 60s, spread by up to 2s
+format_retry_after(1.2)                  # &quot;2&quot;, rounded up so you never retry early</code></pre>
+<p><code>reset_style</code> on <code>parse_rate_limit</code> is <code>"auto"</code> (an implausibly large reset is treated as a timestamp), <code>"delta"</code> or <code>"epoch"</code> when you know what your server sends. <code>now</code> is accepted everywhere a clock is needed, which is what makes the behaviour testable.</p>
+<p>Both header families are read case-insensitively, and RFC 9331 wins when a server sends both.</p>
+<h2>Design notes</h2>
+<ul>
+<li>Precedence: <code>Retry-After</code>, then an exhausted quota's reset, then <code>default</code>.</li>
+<li><code>jitter</code> adds <code>uniform(0, jitter)</code>, so a fleet of clients does not retry in lockstep.</li>
+<li><code>cap</code> is applied after the jitter, so a cap is never exceeded.</li>
+<li>Nothing sleeps, nothing retries: the caller owns the loop and the clock.</li>
+</ul>
+<h2>Development</h2>
+<pre class="code"><span class="lang">console</span><code>python -m venv .venv
+.venv/bin/pip install -e &quot;.[test]&quot;
+.venv/bin/pytest</code></pre>
+<h2>License</h2>
+<p>MIT.</p>
+</main>
+<footer>
+  backoff-headers · MIT · standard library only ·
+  <a href="https://github.com/sandeshbagmare/backoff-headers">source</a> ·
+  <a href="https://pypi.org/project/backoff-headers/">pip install backoff-headers</a>
+</footer>
+</body>
+</html>
