@@ -202,3 +202,29 @@ class TestWaitTime:
     def test_cap_and_jitter_are_rounded(self):
         result = wait_time({"Retry-After": "1"}, now=NOW, jitter=0.5, rng=random.Random(1))
         assert result == round(result, 3)
+
+
+class TestRigour:
+    """Header shapes that the first pass did not reach."""
+
+    def test_a_date_without_a_timezone(self):
+        import time
+
+        future = time.localtime(time.time() + 120)
+        stamp = time.strftime("%a %b %e %H:%M:%S %Y", future)
+        assert parse_retry_after(stamp) > 0
+
+    def test_a_reset_value_that_is_not_a_number_is_ignored(self):
+        limit = parse_rate_limit({"RateLimit-Reset": "soon"})
+        assert limit.reset is None
+
+    def test_the_clock_defaults_to_now(self):
+        assert wait_time({"Retry-After": "0"}) == 0.0
+
+    def test_a_reset_far_in_the_past_waits_nothing(self):
+        # RFC 9331 counts seconds from now, GitHub sends an absolute epoch. Reading one
+        # as the other is the bug this library exists for.
+        assert wait_time({"RateLimit-Reset": "1", "RateLimit-Remaining": "0"}, now=5) == 1.0
+        assert wait_time(
+            {"X-RateLimit-Reset": "1700000000", "X-RateLimit-Remaining": "0"}, now=1_699_999_900
+        ) == 100.0
